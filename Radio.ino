@@ -1,4 +1,3 @@
-
 #include <Sheduler.h>
 #include <IRremote.h>
 #include <SPI.h>
@@ -14,7 +13,7 @@
 // Audio digital pot
 #define PIN_AUDIO_SL 10
 #define PIN_AUDIO_VOL A2
-enum volume_source_e { EXTERNAL_SOURCE = 0, KNOB = 1 } volume_source = KNOB;
+enum volume_source_e { EXTERNAL_SOURCE = 0, KNOB = 1 } volume_source = EXTERNAL_SOURCE;
 
 
 // Sleeve digital pot
@@ -94,6 +93,7 @@ void backlight_set_value( uint8_t __val){
 }
 void backlight_set_target(uint8_t __val){
 	backlight.target  = __val;
+	volume.target = __val;
 	// Serial.print("LED target: "); Serial.println(__val);
 }
 void backlight_write_value(){
@@ -209,7 +209,7 @@ void task_volume_adjust_pot(Task* self){
 			motor_set(MOTOR_OFF);
 			stabalizer += 1;
 			if (stabalizer == 10) {
-				volume_source = KNOB;
+				// volume_source = KNOB;
 				stabalizer = 0;
 			}
 		}
@@ -306,17 +306,26 @@ void setup() {
 	irrecv.enableIRIn(); // Start the receiver
 
 	// MOTOR
-	pinMode(PIN_MOTOR_EN, OUTPUT);
-	pinMode(PIN_MOTOR_DIR, OUTPUT);
-	motor_set(MOTOR_OFF);
+	Serial.print("Motor init...");
+	pinMode(PIN_MOTOR1, OUTPUT);
+	pinMode(PIN_MOTOR2, OUTPUT);
+	Serial.print('.');
+	motor_set(MOTOR_ANTI_CLOCKWISE);
+	delay(1000);
+	Serial.print('.');
+	motor_set(MOTOR_CLOCKWISE);
+	delay(500);
+	Serial.print('.');
+	Serial.println("DONE");
+
 
 
 	// sheduler.addTask(task_ir_read, 100, false);
 
 	sheduler.addTask(task_backlight_rotate, 30, false);
 
-	// sheduler.addTask(task_volume_adjust, 10, true);
-	// sheduler.addTask(task_volume_adjust_pot, 10, true);
+	sheduler.addTask(task_volume_adjust, 10, true);
+	sheduler.addTask(task_volume_adjust_pot, 10, true);
 
 	sheduler.addTask(task_detect_sleeve, 100, false);
 
@@ -401,7 +410,7 @@ void sleeve_command_write(sleev_command_t command){
 void motor_set(motor_setting_e __setting){
 	digitalWrite(PIN_MOTOR1, __setting == MOTOR_CLOCKWISE);
 	digitalWrite(PIN_MOTOR2, __setting == MOTOR_ANTI_CLOCKWISE);
-	Serial.print("Direction: "); Serial.println(__status);
+	// Serial.print("Direction: "); Serial.println(__setting);
 }
 
 
